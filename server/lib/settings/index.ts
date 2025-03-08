@@ -132,6 +132,9 @@ export interface MainSettings {
   partialRequestsEnabled: boolean;
   enableSpecialEpisodes: boolean;
   locale: string;
+  enableDefaultRestrictions: boolean;
+  defaultAllowedMovieCertifications: string[];
+  defaultAllowedTvCertifications: string[];
 }
 
 export interface NetworkSettings {
@@ -354,6 +357,9 @@ class Settings {
         partialRequestsEnabled: true,
         enableSpecialEpisodes: false,
         locale: 'en',
+        enableDefaultRestrictions: false,
+        defaultAllowedMovieCertifications: [],
+        defaultAllowedTvCertifications: [],
       },
       plex: {
         name: '',
@@ -614,6 +620,7 @@ class Settings {
       userEmailRequired:
         this.data.notifications.agents.email.options.userEmailRequired,
       newPlexLogin: this.data.main.newPlexLogin,
+
     };
   }
 

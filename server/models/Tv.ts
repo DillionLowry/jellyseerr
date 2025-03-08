@@ -112,6 +112,7 @@ export interface TvDetails {
   mediaInfo?: Media;
   watchProviders?: WatchProviders[];
   onUserWatchlist?: boolean;
+  certification?: string;
 }
 
 const mapEpisodeResult = (episode: TmdbTvEpisodeResult): Episode => ({

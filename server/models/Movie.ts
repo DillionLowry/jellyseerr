@@ -86,6 +86,7 @@ export interface MovieDetails {
   watchProviders?: WatchProviders[];
   keywords: Keyword[];
   onUserWatchlist?: boolean;
+  certification?: string;
 }
 
 export const mapProductionCompany = (

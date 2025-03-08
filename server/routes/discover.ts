@@ -90,6 +90,24 @@ discoverRoutes.get('/movies', async (req, res, next) => {
     const { certificationMode, ...query } = fullQuery;
     const keywords = query.keywords;
 
+    // Apply user content restrictions if enabled
+    if (req.user?.settings?.enableCertificationRestrictions &&
+      !query.certification &&
+      req.user.settings.allowedMovieCertifications
+    ) {
+      const allowedCerts = req.user.settings.getAllowedMovieCertifications();
+
+      if (allowedCerts.length > 0) {
+        // Join the allowed certifications with | for the API
+        query.certification = allowedCerts.join('|');
+      }
+
+      // Set certification country if not set
+      if (!query.certificationCountry) {
+        query.certificationCountry = 'US';
+      }
+    }
+
     const data = await tmdb.getDiscoverMovies({
       page: Number(query.page),
       sortBy: query.sortBy as SortOptions,
@@ -115,8 +133,9 @@ discoverRoutes.get('/movies', async (req, res, next) => {
       certification: query.certification,
       certificationGte: query.certificationGte,
       certificationLte: query.certificationLte,
-      certificationCountry: query.certificationCountry,
+      certificationCountry: query.certificationCountry || (query.certification ? 'US' : undefined),
     });
+
 
     const media = await Media.getRelatedMedia(
       req.user,
@@ -378,6 +397,24 @@ discoverRoutes.get('/tv', async (req, res, next) => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { certificationMode, ...query } = fullQuery;
     const keywords = query.keywords;
+
+    if (req.user?.settings?.enableCertificationRestrictions &&
+      !query.certification &&
+      req.user.settings.allowedTvCertifications
+    ) {
+      const allowedCerts = req.user.settings.getAllowedTvCertifications();
+
+      if (allowedCerts.length > 0) {
+        // Join the allowed certifications with | for the API
+        query.certification = allowedCerts.join('|');
+      }
+
+      // Set certification country if not set
+      if (!query.certificationCountry) {
+        query.certificationCountry = 'US';
+      }
+    }
+
     const data = await tmdb.getDiscoverTv({
       page: Number(query.page),
       sortBy: query.sortBy as SortOptions,
@@ -404,7 +441,7 @@ discoverRoutes.get('/tv', async (req, res, next) => {
       certification: query.certification,
       certificationGte: query.certificationGte,
       certificationLte: query.certificationLte,
-      certificationCountry: query.certificationCountry,
+      certificationCountry: query.certificationCountry || (query.certificationLte ? 'US' : undefined),
     });
 
     const media = await Media.getRelatedMedia(

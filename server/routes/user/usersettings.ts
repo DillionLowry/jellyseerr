@@ -87,12 +87,16 @@ userSettingsRoutes.get<{ id: string }, UserSettingsGeneralResponse>(
         globalTvQuotaLimit: defaultQuotas.tv.quotaLimit,
         watchlistSyncMovies: user.settings?.watchlistSyncMovies,
         watchlistSyncTv: user.settings?.watchlistSyncTv,
+        enableCertificationRestrictions: user.settings?.enableCertificationRestrictions ?? false,
+        allowedMovieCertifications: user.settings?.allowedMovieCertifications,
+        allowedTvCertifications: user.settings?.allowedTvCertifications,
       });
     } catch (e) {
       next({ status: 500, message: e.message });
     }
   }
 );
+
 
 userSettingsRoutes.post<
   { id: string },
@@ -152,6 +156,9 @@ userSettingsRoutes.post<
         originalLanguage: req.body.originalLanguage,
         watchlistSyncMovies: req.body.watchlistSyncMovies,
         watchlistSyncTv: req.body.watchlistSyncTv,
+        enableCertificationRestrictions: req.body.enableCertificationRestrictions,
+        allowedMovieCertifications: req.body.allowedMovieCertifications,
+        allowedTvCertifications: req.body.allowedTvCertifications,
       });
     } else {
       user.settings.discordId = req.body.discordId;
@@ -161,6 +168,9 @@ userSettingsRoutes.post<
       user.settings.originalLanguage = req.body.originalLanguage;
       user.settings.watchlistSyncMovies = req.body.watchlistSyncMovies;
       user.settings.watchlistSyncTv = req.body.watchlistSyncTv;
+      user.settings.enableCertificationRestrictions = req.body.enableCertificationRestrictions ?? false;
+      user.settings.allowedMovieCertifications = req.body.allowedMovieCertifications;
+      user.settings.allowedTvCertifications = req.body.allowedTvCertifications;
     }
 
     const savedUser = await userRepository.save(user);

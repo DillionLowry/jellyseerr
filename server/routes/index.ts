@@ -41,10 +41,12 @@ import searchRoutes from './search';
 import serviceRoutes from './service';
 import tvRoutes from './tv';
 import user from './user';
+import applyContentRestrictions from '@server/middleware/contentRestriction';
 
 const router = Router();
 
 router.use(checkUser);
+router.use(applyContentRestrictions);
 
 router.get<unknown, StatusResponse>('/status', async (req, res) => {
   const githubApi = new GithubAPI();

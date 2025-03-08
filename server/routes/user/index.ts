@@ -20,15 +20,18 @@ import type {
 import { hasPermission, Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
-import { isAuthenticated } from '@server/middleware/auth';
+import { checkUser, isAuthenticated } from '@server/middleware/auth';
 import { getHostname } from '@server/utils/getHostname';
 import { Router } from 'express';
 import gravatarUrl from 'gravatar-url';
 import { findIndex, sortBy } from 'lodash';
 import { In } from 'typeorm';
 import userSettingsRoutes from './usersettings';
+import applyContentRestrictions from '@server/middleware/contentRestriction';
 
 const router = Router();
+router.use(checkUser);
+router.use(applyContentRestrictions);
 
 router.get('/', async (req, res, next) => {
   try {

@@ -72,6 +72,31 @@ export class UserSettings {
   @Column({ nullable: true })
   public watchlistSyncTv?: boolean;
 
+  @Column({ default: false })
+  public enableCertificationRestrictions?: boolean = false;
+
+  @Column({ type: 'simple-array', nullable: true })
+  public allowedMovieCertifications?: string[];
+
+  @Column({ type: 'simple-array', nullable: true })
+  public allowedTvCertifications?: string[];
+
+  public getAllowedMovieCertifications(): string[] {
+    return this.allowedMovieCertifications ?? [];
+  }
+
+  public getAllowedTvCertifications(): string[] {
+    return this.allowedTvCertifications ?? [];
+  }
+
+  public setAllowedMovieCertifications(certifications: string[]): void {
+    this.allowedMovieCertifications = certifications;
+  }
+
+  public setAllowedTvCertifications(certifications: string[]): void {
+    this.allowedTvCertifications = certifications;
+  }
+
   @Column({
     type: 'text',
     nullable: true,
