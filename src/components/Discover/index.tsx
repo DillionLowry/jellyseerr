@@ -32,7 +32,6 @@ import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
-
 const messages = defineMessages('components.Discover', {
   discover: 'Discover',
   emptywatchlist:
@@ -62,6 +61,8 @@ const Discover = () => {
   } = useSWR<DiscoverSlider[]>('/api/v1/settings/discover');
   const [sliders, setSliders] = useState<Partial<DiscoverSlider>[]>([]);
   const [isEditing, setIsEditing] = useState(false);
+  const { user } = useUser();
+  const hasContentRestrictions = user?.settings?.enableCertificationRestrictions ?? false;
 
   // We need to sync the state here so that we can modify the changes locally without commiting
   // anything to the server until the user decides to save the changes
@@ -118,6 +119,24 @@ const Discover = () => {
       });
     }
   };
+
+  // Remove certification from URL if user has restrictions
+  useEffect(() => {
+    if (hasContentRestrictions) {
+      const params = new URLSearchParams(window.location.search);
+      const hasFilterParams = ['certification', 'certification_gte', 'certification_lte']
+        .some(param => params.has(param));
+
+      if (hasFilterParams) {
+        ['certification', 'certification_gte', 'certification_lte'].forEach(param => {
+          params.delete(param);
+        });
+        
+        const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
+        window.history.replaceState({}, '', newUrl);
+      }
+    }
+  }, [hasContentRestrictions]);
 
   const now = new Date();
   const offset = now.getTimezoneOffset();

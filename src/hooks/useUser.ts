@@ -36,6 +36,9 @@ export interface UserSettings {
   notificationTypes: Partial<NotificationAgentTypes>;
   watchlistSyncMovies?: boolean;
   watchlistSyncTv?: boolean;
+  enableCertificationRestrictions?: boolean;
+  allowedMovieCertifications?: string[];
+  allowedTvCertifications?: string[];
 }
 
 interface UserHookResponse {

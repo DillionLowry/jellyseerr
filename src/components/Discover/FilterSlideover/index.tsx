@@ -13,6 +13,7 @@ import {
   WatchProviderSelector,
 } from '@app/components/Selector';
 import useSettings from '@app/hooks/useSettings';
+
 import {
   useBatchUpdateQueryParams,
   useUpdateQueryParams,
@@ -21,6 +22,8 @@ import defineMessages from '@app/utils/defineMessages';
 import { XCircleIcon } from '@heroicons/react/24/outline';
 import { useIntl } from 'react-intl';
 import Datepicker from 'react-tailwindcss-datepicker-sct';
+import { useUser } from '@app/hooks/useUser';
+import { useEffect } from 'react';
 
 const messages = defineMessages('components.Discover.FilterSlideover', {
   filters: 'Filters',
@@ -64,6 +67,7 @@ const FilterSlideover = ({
 }: FilterSlideoverProps) => {
   const intl = useIntl();
   const { currentSettings } = useSettings();
+  const { user } = useUser();
   const updateQueryParams = useUpdateQueryParams({});
   const batchUpdateQueryParams = useBatchUpdateQueryParams({});
 
@@ -71,6 +75,21 @@ const FilterSlideover = ({
     type === 'movie' ? 'primaryReleaseDateGte' : 'firstAirDateGte';
   const dateLte =
     type === 'movie' ? 'primaryReleaseDateLte' : 'firstAirDateLte';
+
+  // Add check for content restrictions
+  const hasContentRestrictions = user?.settings?.enableCertificationRestrictions ?? false;
+
+  // Clean up certification params from URL if user has restrictions
+  useEffect(() => {
+    if (hasContentRestrictions) {
+      const params = {
+        certification: undefined,
+        certificationLte: undefined,
+        certificationGte: undefined
+      };
+      batchUpdateQueryParams(params);
+    }
+  }, [hasContentRestrictions, batchUpdateQueryParams]);
 
   return (
     <SlideOver
@@ -195,17 +214,20 @@ const FilterSlideover = ({
             updateQueryParams('language', value);
           }}
         />
-        <span className="text-lg font-semibold">
-          {intl.formatMessage(messages.certification)}
-        </span>
-
-        <USCertificationSelector
-          type={type}
-          certification={currentFilters.certification}
-          onChange={(params) => {
-            batchUpdateQueryParams(params);
-          }}
-        />
+        {!hasContentRestrictions && (
+          <>
+            <span className="text-lg font-semibold">
+              {intl.formatMessage(messages.certification)}
+            </span>
+            <USCertificationSelector
+              type={type}
+              certification={currentFilters.certification}
+              onChange={(params) => {
+                batchUpdateQueryParams(params);
+              }}
+            />
+          </>
+        )}
         <span className="text-lg font-semibold">
           {intl.formatMessage(messages.runtime)}
         </span>

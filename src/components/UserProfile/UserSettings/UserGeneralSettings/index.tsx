@@ -23,6 +23,7 @@ import { useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 import * as Yup from 'yup';
+import { movieCertifications, tvCertifications } from '@server/models/certifications';
 
 const messages = defineMessages(
   'components.UserProfile.UserSettings.UserGeneralSettings',
@@ -71,6 +72,16 @@ const messages = defineMessages(
     plexwatchlistsyncseries: 'Auto-Request Series',
     plexwatchlistsyncseriestip:
       'Automatically request series on your <PlexWatchlistSupportLink>Plex Watchlist</PlexWatchlistSupportLink>',
+    certificationRestrictions: 'Content Restrictions',
+    enableCertificationRestrictions: 'Enable Content Rating Restrictions',
+    enableCertificationRestrictionsDescription:
+      'Restrict media based on age-rating certification',
+    allowedMovieCertifications: 'Allowed Movie Ratings',
+    allowedMovieCertificationsDescription: 'Select which movie ratings you want to allow',
+    allowedTvCertifications: 'Allowed TV Ratings',
+    allowedTvCertificationsDescription: 'Select which TV ratings you want to allow',
+    certificationsSelectAll: 'Select All',
+    certificationsSelectNone: 'Select None',
   }
 );
 
@@ -159,10 +170,17 @@ const UserGeneralSettings = () => {
           tvQuotaDays: data?.tvQuotaDays,
           watchlistSyncMovies: data?.watchlistSyncMovies,
           watchlistSyncTv: data?.watchlistSyncTv,
+          enableCertificationRestrictions: data?.enableCertificationRestrictions ?? false,
+          allowedMovieCertifications: data?.allowedMovieCertifications ?? [],
+          allowedTvCertifications: data?.allowedTvCertifications ?? [],
         }}
         validationSchema={UserGeneralSettingsSchema}
         enableReinitialize
         onSubmit={async (values) => {
+          console.log('Submitting form values:', {
+            allowedMovieCertifications: values.allowedMovieCertifications,
+            allowedTvCertifications: values.allowedTvCertifications,
+          });
           try {
             const res = await fetch(`/api/v1/user/${user?.id}/settings/main`, {
               method: 'POST',
@@ -188,6 +206,13 @@ const UserGeneralSettings = () => {
                 tvQuotaDays: tvQuotaEnabled ? values.tvQuotaDays : null,
                 watchlistSyncMovies: values.watchlistSyncMovies,
                 watchlistSyncTv: values.watchlistSyncTv,
+                enableCertificationRestrictions: values.enableCertificationRestrictions,
+                allowedMovieCertifications: values.enableCertificationRestrictions
+                  ? values.allowedMovieCertifications
+                  : [],
+                allowedTvCertifications: values.enableCertificationRestrictions
+                  ? values.allowedTvCertifications
+                  : [],
               }),
             });
             if (!res.ok) throw new Error(res.statusText, { cause: res });
@@ -641,6 +666,155 @@ const UserGeneralSettings = () => {
                     </div>
                   </div>
                 )}
+              {(currentHasPermission(Permission.MANAGE_USERS)) && (
+                <>
+                  <div className="form-row">
+                    <label htmlFor="enableCertificationRestrictions" className="checkbox-label">
+                      <span>
+                        {intl.formatMessage(messages.enableCertificationRestrictions)}
+                      </span>
+                      <span className="label-tip">
+                        {intl.formatMessage(messages.enableCertificationRestrictionsDescription)}
+                      </span>
+                    </label>
+                    <div className="form-input-area">
+                      <Field
+                        type="checkbox"
+                        id="enableCertificationRestrictions"
+                        name="enableCertificationRestrictions"
+                        onChange={() => {
+                          setFieldValue(
+                            'enableCertificationRestrictions',
+                            !values.enableCertificationRestrictions
+                          );
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {values.enableCertificationRestrictions && (
+                    <>
+                      {/* Movie Certifications */}
+                      <div className="form-row">
+                        <label htmlFor="allowedMovieCertifications" className="text-label">
+                          <span>{intl.formatMessage(messages.allowedMovieCertifications)}</span>
+                          <span className="label-tip">
+                            {intl.formatMessage(messages.allowedMovieCertificationsDescription)}
+                          </span>
+                        </label>
+                        <div className="form-input-area">
+                          <div className="mb-2 flex space-x-4">
+                            <button
+                              type="button"
+                              className="text-sm text-gray-400 hover:text-white"
+                              onClick={() => {
+                                setFieldValue(
+                                  'allowedMovieCertifications',
+                                  movieCertifications.map(cert => cert.certification)
+                                );
+                              }}
+                            >
+                              {intl.formatMessage(messages.certificationsSelectAll)}
+                            </button>
+                            <button
+                              type="button"
+                              className="text-sm text-gray-400 hover:text-white"
+                              onClick={() => {
+                                setFieldValue('allowedMovieCertifications', []);
+                              }}
+                            >
+                              {intl.formatMessage(messages.certificationsSelectNone)}
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                            {movieCertifications.map((cert) => (
+                              <div key={cert.certification} className="flex items-center">
+                                <Field
+                                  type="checkbox"
+                                  id={`movie-cert-${cert.certification}`}
+                                  name="allowedMovieCertifications"
+                                  value={cert.certification}
+                                  checked={values.allowedMovieCertifications.includes(cert.certification)}
+                                  onChange={() => {
+                                    const currentCerts = values.allowedMovieCertifications as string[];
+                                    const newCerts = currentCerts.includes(cert.certification)
+                                      ? currentCerts.filter((c: string) => c !== cert.certification)
+                                      : [...currentCerts, cert.certification];
+                                    setFieldValue('allowedMovieCertifications', newCerts);
+                                  }}
+                                  className="h-4 w-4 rounded border-gray-700 bg-gray-900 text-indigo-600 focus:ring-indigo-500"
+                                />
+                                <label htmlFor={`movie-cert-${cert.certification}`} className="ml-2 block text-sm text-gray-100">
+                                  <span className="font-medium">{cert.certification}</span> - {cert.meaning}
+                                </label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* TV Certifications */}
+                      <div className="form-row">
+                        <label htmlFor="allowedTvCertifications" className="text-label">
+                          <span>{intl.formatMessage(messages.allowedTvCertifications)}</span>
+                          <span className="label-tip">
+                            {intl.formatMessage(messages.allowedTvCertificationsDescription)}
+                          </span>
+                        </label>
+                        <div className="form-input-area">
+                          <div className="mb-2 flex space-x-4">
+                            <button
+                              type="button"
+                              className="text-sm text-gray-400 hover:text-white"
+                              onClick={() => {
+                                setFieldValue(
+                                  'allowedTvCertifications',
+                                  tvCertifications.map(cert => cert.certification)
+                                );
+                              }}
+                            >
+                              {intl.formatMessage(messages.certificationsSelectAll)}
+                            </button>
+                            <button
+                              type="button"
+                              className="text-sm text-gray-400 hover:text-white"
+                              onClick={() => {
+                                setFieldValue('allowedTvCertifications', []);
+                              }}
+                            >
+                              {intl.formatMessage(messages.certificationsSelectNone)}
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                            {tvCertifications.map((cert) => (
+                              <div key={cert.certification} className="flex items-center">
+                                <Field
+                                  type="checkbox"
+                                  id={`tv-cert-${cert.certification}`}
+                                  name="allowedTvCertifications"
+                                  value={cert.certification}
+                                  checked={values.allowedTvCertifications.includes(cert.certification)}
+                                  onChange={() => {
+                                    const currentCerts = values.allowedTvCertifications as string[];
+                                    const newCerts = currentCerts.includes(cert.certification)
+                                      ? currentCerts.filter((c: string) => c !== cert.certification)
+                                      : [...currentCerts, cert.certification];
+                                    setFieldValue('allowedTvCertifications', newCerts);
+                                  }}
+                                  className="h-4 w-4 rounded border-gray-700 bg-gray-900 text-indigo-600 focus:ring-indigo-500"
+                                />
+                                <label htmlFor={`tv-cert-${cert.certification}`} className="ml-2 block text-sm text-gray-100">
+                                  <span className="font-medium">{cert.certification}</span> - {cert.meaning}
+                                </label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
               <div className="actions">
                 <div className="flex justify-end">
                   <span className="ml-3 inline-flex rounded-md shadow-sm">
